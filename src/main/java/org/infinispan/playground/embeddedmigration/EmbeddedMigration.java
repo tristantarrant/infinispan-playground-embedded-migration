@@ -9,6 +9,8 @@ import org.apache.commons.cli.Options;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.infinispan.Cache;
+import org.infinispan.client.hotrod.impl.HotRodURI;
+import org.infinispan.commons.dataconversion.MediaType;
 import org.infinispan.configuration.cache.ConfigurationBuilder;
 import org.infinispan.manager.DefaultCacheManager;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
@@ -34,15 +36,17 @@ public class EmbeddedMigration {
 
       // Configure a cache
       ConfigurationBuilder builder = new ConfigurationBuilder();
+      builder.encoding().mediaType(MediaType.APPLICATION_OBJECT_TYPE);
 
       boolean doMigration = cmd.hasOption("f");
 
       // Migration from a source cluster: configure the remote cache store
       if (doMigration) {
-         builder.persistence().addStore(RemoteStoreConfigurationBuilder.class)
+         HotRodURI uri = HotRodURI.create(cmd.getOptionValue("f"));
+         RemoteStoreConfigurationBuilder store = builder.persistence().addStore(RemoteStoreConfigurationBuilder.class)
                .remoteCacheName("cache")
-               .hotRodWrapping(true)
-               .addProperty("infinispan.client.hotrod.uri", cmd.getOptionValue("f"));
+               .hotRodWrapping(true);
+         uri.getAddresses().forEach(address -> store.addServer().host(address.getHostName()).port(address.getPort()));
       }
 
       // Create the cache(s)
