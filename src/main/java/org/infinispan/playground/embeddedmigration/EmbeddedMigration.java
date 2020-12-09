@@ -38,6 +38,7 @@ public class EmbeddedMigration {
 
       // Configure a cache
       ConfigurationBuilder builder = new ConfigurationBuilder();
+      builder.compatibility().enable();
 
       boolean doMigration = cmd.hasOption("f");
 
